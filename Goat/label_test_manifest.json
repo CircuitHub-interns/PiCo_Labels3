@@ -1,0 +1,31 @@
+{
+  "schema_version": 2,
+  "event_type": "pico_labels.generated",
+  "created_at_utc": "2026-07-07T12:44:12.194543+00:00",
+  "mode": "test",
+  "gantry": null,
+  "tools": [
+    {
+      "tool_number": "N0001",
+      "tool_name": "CH0204",
+      "gantry": null,
+      "serial_id": 1,
+      "padded_serial": "0001"
+    },
+    {
+      "tool_number": "N0002",
+      "tool_name": "P056",
+      "gantry": null,
+      "serial_id": 2,
+      "padded_serial": "0002"
+    }
+  ],
+  "files": {
+    "generated_svgs": [
+      "label_test_1.svg",
+      "label_test_2.svg"
+    ],
+    "template_file": "single_label_generated_in_code",
+    "verification_report": "C:\\Users\\efren\\OneDrive\\Desktop\\Cross _ Study\\Work Related\\Circuit Hub\\Projects\\All Labeling Revolving\\Nozzle Code\\Goat\\verification_report.json"
+  }
+}

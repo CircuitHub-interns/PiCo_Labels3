@@ -1,0 +1,78 @@
+{
+  "timestamp_utc": "2026-07-07T12:44:12.195673+00:00",
+  "verification_enabled": false,
+  "verification_scope": "all",
+  "verification_result": "skipped",
+  "health_check": {
+    "status": "skipped",
+    "reason": "verification_disabled",
+    "expected_payload": null,
+    "decoded_payload": null,
+    "decode_strategy": null
+  },
+  "summary": {
+    "labels_seen": 2,
+    "labels_checked": 0,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 2
+  },
+  "failure_reason_counts": {},
+  "repeated_failure_signatures": [],
+  "failure_samples": [],
+  "failure_samples_truncated": false,
+  "run_context": {
+    "mode": "test",
+    "gantry": null,
+    "swap_parts": [
+      {
+        "part": "CH0204",
+        "slot_id": "N0001",
+        "n_number": 1
+      },
+      {
+        "part": "P056",
+        "slot_id": "N0002",
+        "n_number": 2
+      }
+    ],
+    "verification_scope": "all",
+    "labels_requested": 2,
+    "generated_files": [
+      "label_test_1.svg",
+      "label_test_2.svg"
+    ],
+    "database_manifest_file": "C:\\Users\\efren\\OneDrive\\Desktop\\Cross _ Study\\Work Related\\Circuit Hub\\Projects\\All Labeling Revolving\\Nozzle Code\\Goat\\label_test_manifest.json",
+    "database_manifest": {
+      "schema_version": 2,
+      "event_type": "pico_labels.generated",
+      "created_at_utc": "2026-07-07T12:44:12.194543+00:00",
+      "mode": "test",
+      "gantry": null,
+      "tools": [
+        {
+          "tool_number": "N0001",
+          "tool_name": "CH0204",
+          "gantry": null,
+          "serial_id": 1,
+          "padded_serial": "0001"
+        },
+        {
+          "tool_number": "N0002",
+          "tool_name": "P056",
+          "gantry": null,
+          "serial_id": 2,
+          "padded_serial": "0002"
+        }
+      ],
+      "files": {
+        "generated_svgs": [
+          "label_test_1.svg",
+          "label_test_2.svg"
+        ],
+        "template_file": "single_label_generated_in_code",
+        "verification_report": "C:\\Users\\efren\\OneDrive\\Desktop\\Cross _ Study\\Work Related\\Circuit Hub\\Projects\\All Labeling Revolving\\Nozzle Code\\Goat\\verification_report.json"
+      }
+    }
+  }
+}
