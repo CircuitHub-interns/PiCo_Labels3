@@ -2,7 +2,7 @@
   "schema_version": 2,
   "event_type": "pico_labels.gantry_manifest",
   "gantry": "G3",
-  "updated_at_utc": "2026-06-05T20:50:13.637347+00:00",
+  "updated_at_utc": "2026-07-07T16:53:12.428880+00:00",
   "runs": [
     {
       "schema_version": 2,
@@ -268,6 +268,58 @@
         "verification_report": "C:\\Users\\efren\\OneDrive\\Desktop\\Cross _ Study\\Work Related\\Circuit Hub\\Projects\\Pico Labels\\Goat\\verification_report.json",
         "manifest_file": "C:\\Users\\efren\\OneDrive\\Desktop\\Cross _ Study\\Work Related\\Circuit Hub\\Projects\\Pico Labels\\Goat\\SWAP Outputs\\G3\\G3_manifest.json"
       }
+    },
+    {
+      "schema_version": 2,
+      "event_type": "pico_labels.generated",
+      "created_at_utc": "2026-07-07T15:08:42.483320+00:00",
+      "mode": "production",
+      "gantry": "G3",
+      "tools": [
+        {
+          "tool_number": "N0070",
+          "tool_name": "CH0204",
+          "gantry": "G3",
+          "serial_id": 70,
+          "padded_serial": "0070"
+        },
+        {
+          "tool_number": "N0071",
+          "tool_name": "CH0204",
+          "gantry": "G3",
+          "serial_id": 71,
+          "padded_serial": "0071"
+        },
+        {
+          "tool_number": "N0072",
+          "tool_name": "CH0406",
+          "gantry": "G3",
+          "serial_id": 72,
+          "padded_serial": "0072"
+        },
+        {
+          "tool_number": "N0073",
+          "tool_name": "CH0406",
+          "gantry": "G3",
+          "serial_id": 73,
+          "padded_serial": "0073"
+        },
+        {
+          "tool_number": "N0074",
+          "tool_name": "CH0406",
+          "gantry": "G3",
+          "serial_id": 74,
+          "padded_serial": "0074"
+        }
+      ],
+      "files": {
+        "generated_svgs": [
+          "C:\\Users\\Natha\\Downloads\\Labeling\\PiCo_Labels3\\Goat\\SWAP Outputs\\G3\\G3_V3.svg"
+        ],
+        "template_file": "C:\\Users\\Natha\\Downloads\\Labeling\\PiCo_Labels3\\Goat\\onlygodknows.svg",
+        "verification_report": "C:\\Users\\Natha\\Downloads\\Labeling\\PiCo_Labels3\\Goat\\verification_report.json",
+        "manifest_file": "C:\\Users\\Natha\\Downloads\\Labeling\\PiCo_Labels3\\Goat\\SWAP Outputs\\G3\\G3_manifest.json"
+      }
     }
   ],
   "tools": [
@@ -501,6 +553,13 @@
       "gantry": "G3",
       "serial_id": 69,
       "padded_serial": "0069"
+    },
+    {
+      "tool_number": "N0070",
+      "tool_name": "CH0204",
+      "gantry": "G3",
+      "serial_id": 70,
+      "padded_serial": "0070"
     }
   ]
 }

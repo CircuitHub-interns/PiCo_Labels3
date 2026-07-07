@@ -2,7 +2,7 @@
   "schema_version": 2,
   "event_type": "pico_labels.gantry_manifest",
   "gantry": "G2",
-  "updated_at_utc": "2026-06-05T11:51:28.654494+00:00",
+  "updated_at_utc": "2026-07-07T16:53:12.424651+00:00",
   "runs": [
     {
       "schema_version": 1,
@@ -12,25 +12,139 @@
       "gantry": "G2",
       "note": "Migrated from legacy SWAP_manifest.json (schema_version 1). Part names were not recorded per-tool in the old schema; tool_name is 'SWAP' for all entries from this run.",
       "tools": [
-        { "tool_number": "N0001", "tool_name": "CH0204",    "gantry": "G2", "serial_id": 1,  "padded_serial": "0001" },
-        { "tool_number": "N0002", "tool_name": "CH0204",    "gantry": "G2", "serial_id": 2,  "padded_serial": "0002" },
-        { "tool_number": "N0003", "tool_name": "CH0204",    "gantry": "G2", "serial_id": 3,  "padded_serial": "0003" },
-        { "tool_number": "N0004", "tool_name": "CH0406",    "gantry": "G2", "serial_id": 4,  "padded_serial": "0004" },
-        { "tool_number": "N0005", "tool_name": "CH0406",    "gantry": "G2", "serial_id": 5,  "padded_serial": "0005" },
-        { "tool_number": "N0006", "tool_name": "P017",      "gantry": "G2", "serial_id": 6,  "padded_serial": "0006" },
-        { "tool_number": "N0007", "tool_name": "P018",      "gantry": "G2", "serial_id": 7,  "padded_serial": "0007" },
-        { "tool_number": "N0008", "tool_name": "P019",      "gantry": "G2", "serial_id": 8,  "padded_serial": "0008" },
-        { "tool_number": "N0009", "tool_name": "P054",      "gantry": "G2", "serial_id": 9,  "padded_serial": "0009" },
-        { "tool_number": "N0010", "tool_name": "P054",      "gantry": "G2", "serial_id": 10, "padded_serial": "0010" },
-        { "tool_number": "N0011", "tool_name": "P055",      "gantry": "G2", "serial_id": 11, "padded_serial": "0011" },
-        { "tool_number": "N0012", "tool_name": "P055",      "gantry": "G2", "serial_id": 12, "padded_serial": "0012" },
-        { "tool_number": "N0013", "tool_name": "P055",      "gantry": "G2", "serial_id": 13, "padded_serial": "0013" },
-        { "tool_number": "N0014", "tool_name": "P056",      "gantry": "G2", "serial_id": 14, "padded_serial": "0014" },
-        { "tool_number": "N0015", "tool_name": "P057",      "gantry": "G2", "serial_id": 15, "padded_serial": "0015" },
-        { "tool_number": "N0016", "tool_name": "P063",      "gantry": "G2", "serial_id": 16, "padded_serial": "0016" },
-        { "tool_number": "N0017", "tool_name": "P063",      "gantry": "G2", "serial_id": 17, "padded_serial": "0017" },
-        { "tool_number": "N0018", "tool_name": "P063",      "gantry": "G2", "serial_id": 18, "padded_serial": "0018" },
-        { "tool_number": "N0019", "tool_name": "REFERENCE", "gantry": "G2", "serial_id": 19, "padded_serial": "0019" }
+        {
+          "tool_number": "N0001",
+          "tool_name": "CH0204",
+          "gantry": "G2",
+          "serial_id": 1,
+          "padded_serial": "0001"
+        },
+        {
+          "tool_number": "N0002",
+          "tool_name": "CH0204",
+          "gantry": "G2",
+          "serial_id": 2,
+          "padded_serial": "0002"
+        },
+        {
+          "tool_number": "N0003",
+          "tool_name": "CH0204",
+          "gantry": "G2",
+          "serial_id": 3,
+          "padded_serial": "0003"
+        },
+        {
+          "tool_number": "N0004",
+          "tool_name": "CH0406",
+          "gantry": "G2",
+          "serial_id": 4,
+          "padded_serial": "0004"
+        },
+        {
+          "tool_number": "N0005",
+          "tool_name": "CH0406",
+          "gantry": "G2",
+          "serial_id": 5,
+          "padded_serial": "0005"
+        },
+        {
+          "tool_number": "N0006",
+          "tool_name": "P017",
+          "gantry": "G2",
+          "serial_id": 6,
+          "padded_serial": "0006"
+        },
+        {
+          "tool_number": "N0007",
+          "tool_name": "P018",
+          "gantry": "G2",
+          "serial_id": 7,
+          "padded_serial": "0007"
+        },
+        {
+          "tool_number": "N0008",
+          "tool_name": "P019",
+          "gantry": "G2",
+          "serial_id": 8,
+          "padded_serial": "0008"
+        },
+        {
+          "tool_number": "N0009",
+          "tool_name": "P054",
+          "gantry": "G2",
+          "serial_id": 9,
+          "padded_serial": "0009"
+        },
+        {
+          "tool_number": "N0010",
+          "tool_name": "P054",
+          "gantry": "G2",
+          "serial_id": 10,
+          "padded_serial": "0010"
+        },
+        {
+          "tool_number": "N0011",
+          "tool_name": "P055",
+          "gantry": "G2",
+          "serial_id": 11,
+          "padded_serial": "0011"
+        },
+        {
+          "tool_number": "N0012",
+          "tool_name": "P055",
+          "gantry": "G2",
+          "serial_id": 12,
+          "padded_serial": "0012"
+        },
+        {
+          "tool_number": "N0013",
+          "tool_name": "P055",
+          "gantry": "G2",
+          "serial_id": 13,
+          "padded_serial": "0013"
+        },
+        {
+          "tool_number": "N0014",
+          "tool_name": "P056",
+          "gantry": "G2",
+          "serial_id": 14,
+          "padded_serial": "0014"
+        },
+        {
+          "tool_number": "N0015",
+          "tool_name": "P057",
+          "gantry": "G2",
+          "serial_id": 15,
+          "padded_serial": "0015"
+        },
+        {
+          "tool_number": "N0016",
+          "tool_name": "P063",
+          "gantry": "G2",
+          "serial_id": 16,
+          "padded_serial": "0016"
+        },
+        {
+          "tool_number": "N0017",
+          "tool_name": "P063",
+          "gantry": "G2",
+          "serial_id": 17,
+          "padded_serial": "0017"
+        },
+        {
+          "tool_number": "N0018",
+          "tool_name": "P063",
+          "gantry": "G2",
+          "serial_id": 18,
+          "padded_serial": "0018"
+        },
+        {
+          "tool_number": "N0019",
+          "tool_name": "REFERENCE",
+          "gantry": "G2",
+          "serial_id": 19,
+          "padded_serial": "0019"
+        }
       ],
       "files": {
         "generated_svgs": [
@@ -67,25 +181,139 @@
     }
   ],
   "tools": [
-    { "tool_number": "N0001", "tool_name": "CH0204",    "gantry": "G2", "serial_id": 1,  "padded_serial": "0001" },
-    { "tool_number": "N0002", "tool_name": "CH0204",    "gantry": "G2", "serial_id": 2,  "padded_serial": "0002" },
-    { "tool_number": "N0003", "tool_name": "CH0204",    "gantry": "G2", "serial_id": 3,  "padded_serial": "0003" },
-    { "tool_number": "N0004", "tool_name": "CH0406",    "gantry": "G2", "serial_id": 4,  "padded_serial": "0004" },
-    { "tool_number": "N0005", "tool_name": "CH0406",    "gantry": "G2", "serial_id": 5,  "padded_serial": "0005" },
-    { "tool_number": "N0006", "tool_name": "P017",      "gantry": "G2", "serial_id": 6,  "padded_serial": "0006" },
-    { "tool_number": "N0007", "tool_name": "P018",      "gantry": "G2", "serial_id": 7,  "padded_serial": "0007" },
-    { "tool_number": "N0008", "tool_name": "P019",      "gantry": "G2", "serial_id": 8,  "padded_serial": "0008" },
-    { "tool_number": "N0009", "tool_name": "P054",      "gantry": "G2", "serial_id": 9,  "padded_serial": "0009" },
-    { "tool_number": "N0010", "tool_name": "P054",      "gantry": "G2", "serial_id": 10, "padded_serial": "0010" },
-    { "tool_number": "N0011", "tool_name": "P055",      "gantry": "G2", "serial_id": 11, "padded_serial": "0011" },
-    { "tool_number": "N0012", "tool_name": "P055",      "gantry": "G2", "serial_id": 12, "padded_serial": "0012" },
-    { "tool_number": "N0013", "tool_name": "P055",      "gantry": "G2", "serial_id": 13, "padded_serial": "0013" },
-    { "tool_number": "N0014", "tool_name": "P056",      "gantry": "G2", "serial_id": 14, "padded_serial": "0014" },
-    { "tool_number": "N0015", "tool_name": "P057",      "gantry": "G2", "serial_id": 15, "padded_serial": "0015" },
-    { "tool_number": "N0016", "tool_name": "P063",      "gantry": "G2", "serial_id": 16, "padded_serial": "0016" },
-    { "tool_number": "N0017", "tool_name": "P063",      "gantry": "G2", "serial_id": 17, "padded_serial": "0017" },
-    { "tool_number": "N0018", "tool_name": "P063",      "gantry": "G2", "serial_id": 18, "padded_serial": "0018" },
-    { "tool_number": "N0019", "tool_name": "REFERENCE", "gantry": "G2", "serial_id": 19, "padded_serial": "0019" },
+    {
+      "tool_number": "N0001",
+      "tool_name": "CH0204",
+      "gantry": "G2",
+      "serial_id": 1,
+      "padded_serial": "0001"
+    },
+    {
+      "tool_number": "N0002",
+      "tool_name": "CH0204",
+      "gantry": "G2",
+      "serial_id": 2,
+      "padded_serial": "0002"
+    },
+    {
+      "tool_number": "N0003",
+      "tool_name": "CH0204",
+      "gantry": "G2",
+      "serial_id": 3,
+      "padded_serial": "0003"
+    },
+    {
+      "tool_number": "N0004",
+      "tool_name": "CH0406",
+      "gantry": "G2",
+      "serial_id": 4,
+      "padded_serial": "0004"
+    },
+    {
+      "tool_number": "N0005",
+      "tool_name": "CH0406",
+      "gantry": "G2",
+      "serial_id": 5,
+      "padded_serial": "0005"
+    },
+    {
+      "tool_number": "N0006",
+      "tool_name": "P017",
+      "gantry": "G2",
+      "serial_id": 6,
+      "padded_serial": "0006"
+    },
+    {
+      "tool_number": "N0007",
+      "tool_name": "P018",
+      "gantry": "G2",
+      "serial_id": 7,
+      "padded_serial": "0007"
+    },
+    {
+      "tool_number": "N0008",
+      "tool_name": "P019",
+      "gantry": "G2",
+      "serial_id": 8,
+      "padded_serial": "0008"
+    },
+    {
+      "tool_number": "N0009",
+      "tool_name": "P054",
+      "gantry": "G2",
+      "serial_id": 9,
+      "padded_serial": "0009"
+    },
+    {
+      "tool_number": "N0010",
+      "tool_name": "P054",
+      "gantry": "G2",
+      "serial_id": 10,
+      "padded_serial": "0010"
+    },
+    {
+      "tool_number": "N0011",
+      "tool_name": "P055",
+      "gantry": "G2",
+      "serial_id": 11,
+      "padded_serial": "0011"
+    },
+    {
+      "tool_number": "N0012",
+      "tool_name": "P055",
+      "gantry": "G2",
+      "serial_id": 12,
+      "padded_serial": "0012"
+    },
+    {
+      "tool_number": "N0013",
+      "tool_name": "P055",
+      "gantry": "G2",
+      "serial_id": 13,
+      "padded_serial": "0013"
+    },
+    {
+      "tool_number": "N0014",
+      "tool_name": "P056",
+      "gantry": "G2",
+      "serial_id": 14,
+      "padded_serial": "0014"
+    },
+    {
+      "tool_number": "N0015",
+      "tool_name": "P057",
+      "gantry": "G2",
+      "serial_id": 15,
+      "padded_serial": "0015"
+    },
+    {
+      "tool_number": "N0016",
+      "tool_name": "P063",
+      "gantry": "G2",
+      "serial_id": 16,
+      "padded_serial": "0016"
+    },
+    {
+      "tool_number": "N0017",
+      "tool_name": "P063",
+      "gantry": "G2",
+      "serial_id": 17,
+      "padded_serial": "0017"
+    },
+    {
+      "tool_number": "N0018",
+      "tool_name": "P063",
+      "gantry": "G2",
+      "serial_id": 18,
+      "padded_serial": "0018"
+    },
+    {
+      "tool_number": "N0019",
+      "tool_name": "REFERENCE",
+      "gantry": "G2",
+      "serial_id": 19,
+      "padded_serial": "0019"
+    },
     {
       "tool_number": "N0020",
       "tool_name": "CH0406",
