@@ -2,7 +2,7 @@
   "schema_version": 2,
   "event_type": "pico_labels.gantry_manifest",
   "gantry": "G1",
-  "updated_at_utc": "2026-06-05T11:57:50.734157+00:00",
+  "updated_at_utc": "2026-07-07T16:53:12.391765+00:00",
   "runs": [
     {
       "schema_version": 2,
