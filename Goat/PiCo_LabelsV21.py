@@ -545,12 +545,51 @@ class Label_Gen:
         return project_path("SWAP Outputs") / "global_counter.txt"
 
     def _read_n_counter(self):
+        """Return the next N counter (one-based) to use.
+
+        This implementation prefers the persisted global_counter.txt value but also
+        scans all JSON manifests under SWAP Outputs for existing N numbers and
+        ensures the next returned N is strictly greater than any seen. This avoids
+        regressing the counter when manifests have been edited or imported.
+        """
         counter_file = self._n_counter_file()
         counter_file.parent.mkdir(parents=True, exist_ok=True)
+
+        # Start with the persisted value (if any). The file stores the last used N;
+        # the next N to issue would be last_used + 1.
+        next_from_file = 1
         if counter_file.exists():
-            content = counter_file.read_text(encoding="utf-8").strip()
-            return int(content) + 1 if content else 1
-        return 1
+            try:
+                content = counter_file.read_text(encoding="utf-8").strip()
+                if content:
+                    next_from_file = int(content) + 1
+            except Exception:
+                # If the file is malformed, ignore and fall back to scanning manifests.
+                next_from_file = 1
+
+        # Scan all JSON files under SWAP Outputs for occurrences of slot IDs like "N0125"
+        # and derive the highest numeric value seen. This catches per-gantry manifests,
+        # the global manifest, pending manifest, and any run manifests.
+        output_folder = project_path("SWAP Outputs")
+        max_seen = 0
+        if output_folder.exists():
+            for json_path in output_folder.rglob("*.json"):
+                try:
+                    text = json_path.read_text(encoding="utf-8")
+                except Exception:
+                    continue
+                for match in re.findall(r"N(\d{3,6})", text):
+                    try:
+                        val = int(match)
+                        if val > max_seen:
+                            max_seen = val
+                    except ValueError:
+                        continue
+
+        next_from_manifests = max_seen + 1 if max_seen else 1
+
+        # Choose the safest (highest) next starting N.
+        return max(next_from_file, next_from_manifests)
 
     def _save_n_counter(self, last_n):
         counter_file = self._n_counter_file()
