@@ -107,20 +107,21 @@ DASH_MID_DEG      = 180      # 180 = dash at LEFT, gap (and DM) at RIGHT
 RING_CLOCKWISE    = False    # False = readable-from-outside, sweeps C->...->0 CW
 DESIGN_CENTER_X   = 252      # horizontal center of the RING on the 400-dot liner
 DESIGN_CENTER_Y   = 150      # vertical center of the RING (bigger = lower)
-DM_MODULE         = 5        # Data Matrix module (dot) size -> the ^BXN height param.
-                             # Same h value drives BOTH axes (ZPL's ^BX is square by
-                             # default, m=1), so DM_MODULE*DM_SYMBOL_MODULES is always
-                             # an equal-sided square -- no separate width/height knob
-                             # to desync. At 600 dpi, 5*10=50 dots = ~2.12mm x 2.12mm
-                             # (closest integer-dot square to the 2.28mm target; 6 would
-                             # give 2.54mm -- pick whichever prints closer on your media).
+DM_MODULE         = 5        # Data Matrix module (dot) size, in dots/module. Drives
+                             # BOTH axes equally (it's the resize target side length
+                             # for _render_dm_image(), not a printer barcode param),
+                             # so DM_MODULE*DM_SYMBOL_MODULES is always an equal-sided
+                             # square -- no separate width/height knob to desync. At
+                             # 600 dpi, 5*10=50 dots = ~2.12mm x 2.12mm (closest
+                             # integer-dot square to the 2.28mm target; 6 would give
+                             # 2.54mm -- pick whichever prints closer on your media).
 DM_SYMBOL_MODULES = 10       # DM symbol grid size (columns=rows=this). "N####" ECC200-
                              # encodes as 3 data codewords (N=1 + "00","00" digit-pair-
                              # compacted=2), which is the 10x10 size's exact capacity
                              # (3 data + 5 ECC) -- the smallest valid ECC200 symbol for
                              # this data, so this shrinks the DM without touching N0000.
-                             # Forced explicitly via ^BXN's columns/rows params below --
-                             # without that the printer's auto-size picked 12x12.
+                             # Forced explicitly via treepoem's "version" option in
+                             # _render_dm_image() -- without that it auto-picked 12x12.
 DM_OFFSET_X       = 96       # push DM RIGHT into the ring opening (V23: +13.9px x6.25)
 DM_OFFSET_Y       = -6       # lift DM to the vertical middle (V23: -0.7px x6.25)
 RING_LETTER_SPACING_PX = 12 # extra gap between glyphs, in dots (bigger = more spread out;
@@ -344,6 +345,24 @@ def _dm_symbol_dots():
     return DM_SYMBOL_MODULES * DM_MODULE
 
 
+def _render_dm_image(slot, s):
+    """Render the Data Matrix for `slot` as a pixel-exact s x s square ink
+    mask (ink=255, same convention as the ring bitmap) via treepoem's ECC200
+    Data Matrix generator, forced to a DM_SYMBOL_MODULES x DM_SYMBOL_MODULES
+    grid. Baking this into a ^GFA bitmap (see image_to_gfa) instead of using
+    the native ^BXN barcode guarantees a perfect square on paper: it removes
+    any dependency on the printer's own barcode-symbology renderer, whose
+    aspect-ratio/columns/rows handling isn't guaranteed to behave the same
+    across firmware/printer models (observed printing as a rectangle here
+    despite ^BXN's explicit square-aspect and equal columns/rows params)."""
+    dm = treepoem.generate_barcode(
+        barcode_type="datamatrix", data=slot,
+        options={"version": f"{DM_SYMBOL_MODULES}x{DM_SYMBOL_MODULES}"},
+    ).convert("L")
+    dm = dm.resize((s, s), Image.NEAREST)
+    return dm.point(lambda p: 255 if p < INK_THRESHOLD else 0)
+
+
 def _validate_dm_geometry(dmx, dmy, s, cx, cy):
     """Raise ValueError if the axis-aligned DM square [dmx,dmx+s]x[dmy,dmy+s]
     (all in liner dots) doesn't clear the inner hole or overruns the outer
@@ -380,7 +399,7 @@ def _placement(part, n_number):
     """Work out the absolute (^LH0,0-relative) top-left corners for the ring
     graphic and the Data Matrix so both share DESIGN_CENTER_X/Y.
 
-    Returns (cropped_ring, gfa_field, gx, gy, dmx, dmy, s)."""
+    Returns (cropped_ring, gfa_field, gx, gy, dmx, dmy, s, dm_ink, dm_gfa_field)."""
     cropped, (ccx, ccy) = render_ring(part, n_number)
     gfa_field = image_to_gfa(cropped)
 
@@ -399,26 +418,23 @@ def _placement(part, n_number):
     dmx = round(DESIGN_CENTER_X - s / 2 + DM_OFFSET_X)
     dmy = round(DESIGN_CENTER_Y - s / 2 + DM_OFFSET_Y)
     _validate_dm_geometry(dmx, dmy, s, DESIGN_CENTER_X, DESIGN_CENTER_Y)
-    return cropped, gfa_field, gx, gy, dmx, dmy, s
+
+    slot = f"N{n_number:04d}"
+    dm_ink = _render_dm_image(slot, s)
+    dm_gfa_field = image_to_gfa(dm_ink)
+    return cropped, gfa_field, gx, gy, dmx, dmy, s, dm_ink, dm_gfa_field
 
 
 def render_label_image(part, n_number):
     """Full-label preview (black-on-white PIL image, PRINT_WIDTH x LABEL_LENGTH)
-    laid out EXACTLY like build_zpl_JOA: ring graphic + a rendered Data Matrix
-    on the shared center. Use this to eyeball position/size before printing --
-    anything running off the top/edge here will run off on the printer too."""
-    slot = f"N{n_number:04d}"
-    cropped, _gfa, gx, gy, dmx, dmy, s = _placement(part, n_number)
+    laid out EXACTLY like build_zpl_JOA: ring graphic + the SAME Data Matrix
+    bitmap that gets shipped to the printer (see _placement). Use this to
+    eyeball position/size before printing -- anything running off the top/edge
+    here will run off on the printer too."""
+    cropped, _gfa, gx, gy, dmx, dmy, _s, dm_ink, _dm_gfa = _placement(part, n_number)
 
     label = Image.new("L", (PRINT_WIDTH, LABEL_LENGTH), 0)
     label.paste(cropped, (gx, gy), cropped)   # ink-only mask: 0s stay transparent
-
-    dm = treepoem.generate_barcode(
-        barcode_type="datamatrix", data=slot,
-        options={"version": f"{DM_SYMBOL_MODULES}x{DM_SYMBOL_MODULES}"},
-    ).convert("L")
-    dm = dm.resize((s, s), Image.NEAREST)
-    dm_ink = dm.point(lambda p: 255 if p < INK_THRESHOLD else 0)
     label.paste(dm_ink, (dmx, dmy), dm_ink)
 
     return label.point(lambda p: 0 if p >= INK_THRESHOLD else 255)  # black-on-white
@@ -447,10 +463,11 @@ def render_label_image(part, n_number):
 #                                    bottom of the generated ZPL).
 #   DATA MATRIX NOT CENTERED ....... DM_OFFSET_X / DM_OFFSET_Y nudge it; the DM
 #                                    grid size is FORCED to DM_SYMBOL_MODULES via
-#                                    ^BXN's columns/rows params, so keep that in
-#                                    sync if you ever change it.
-#   DATA MATRIX TOO SMALL/BIG ...... DM_MODULE (5 now; this is the ^BXN height, applied
-#                                    to both axes so it always stays square).
+#                                    _render_dm_image()'s treepoem "version" option,
+#                                    so keep that in sync if you ever change it.
+#   DATA MATRIX TOO SMALL/BIG ...... DM_MODULE (5 now; this is the resize side length
+#                                    per module, applied to both axes so it always
+#                                    stays a perfect square -- see _render_dm_image()).
 #
 # The two gaps you asked about -- part-name-end-to-DM and number-end-to-DM --
 # are equal by construction (the text is centered on DASH_MID_DEG, so the two
@@ -460,26 +477,38 @@ def render_label_image(part, n_number):
 
 def build_zpl_JOA(part, n_number, copies=1):
     """Raw ZPL for the hand-tuned CH0204-style round label (see
-    Nozzle_ZPL.txt), parameterized on part + n_number. Every command line
-    below is copied from the hand-tuned original; the only per-label changes:
+    Nozzle_ZPL.txt), parameterized on part + n_number. The only per-label
+    changes vs. the hand-tuned original:
       1. the curved part-name ring graphic (the ^FO.. ^GFA line)
-      2. that graphic's ^FO and the Data Matrix's ^FO -- both computed from the
-         LAYOUT KNOBS so the ring and the DM share one center (concentric)
-      3. the native Data Matrix's ^FD data (the serial)
+      2. the Data Matrix, ALSO rendered as a ^GFA bitmap (not the native ^BXN
+         barcode) so its printed shape is pixel-exact and guaranteed square --
+         see _render_dm_image()'s docstring for why
+      3. both graphics' ^FO placement -- computed from the LAYOUT KNOBS so
+         the ring and the DM always share one center (concentric)
     copies is accepted for interface parity with generate_label() but unused --
     this template has no ^PQ (the original didn't either).
+
+    IMPORTANT ZPL-comment rule: every ; comment below is on its OWN line.
+    ZPL keeps reading a parameterized command's value until the next ^ or ~,
+    so a comment appended after a command ON THE SAME LINE gets silently
+    swallowed into that command's parameter (e.g. ^LL362 ; Label Length was
+    parsed as ^LL's value being "362 ; Label Length", corrupting the label
+    length). Never put a comment on the same line as a command.
     """
     part = validate_part(part)
     slot = f"N{n_number:04d}"
     text = f"{part}-{n_number:04d}"
-    _cropped, gfa_field, gx, gy, dmx, dmy, _s = _placement(part, n_number)
+    _cropped, gfa_field, gx, gy, dmx, dmy, _s, _dm_ink, dm_gfa_field = _placement(part, n_number)
 
     return (
-        "CT~~CD,~CC^~CT~ ; This is for Cache \n"
-        "^XA             ; ^XA is the start type thing, and XZ the close <html> </html> type\n"
+        "CT~~CD,~CC^~CT~\n"
+        "; This is for Cache\n"
+        "^XA\n"
+        "; ^XA is the start type thing, and XZ the close <html> </html> type\n"
         "~TA000\n"
-        "~JSN            ; Back feeding sequence, with parent being JS, and N is just a specific parameter type\n"
-        "^MMT            ; \n"
+        "~JSN\n"
+        "; Back feeding sequence, with parent being JS, and N is just a specific parameter type\n"
+        "^MMT\n"
         "^MPE\n"
         "~SD20\n"
         "^JZY\n"
@@ -487,31 +516,44 @@ def build_zpl_JOA(part, n_number, copies=1):
         "^XZ\n"
         "\n"
         "; =====================================================================\n"
-        f"; {part} ROUND LABEL - HYBRID (native Data Matrix + curved-text graphic)\n"
+        f"; {part} ROUND LABEL - HYBRID (curved-text graphic + Data Matrix graphic)\n"
         "; 0.443 in dia round | 600 dpi | Thermal Transfer | black-mark media\n"
         f"; Data Matrix data = {slot}   |  curved text = {text}\n"
         "; SEND RAW (not through the ZDesigner graphics driver).\n"
-        "; NOTE: comment lines must NOT contain a caret, or the printer reads it\n"
-        "; as a command. That is why commands are written plainly below (LH, BX...).\n"
+        "; NOTE: comment lines must NOT contain a caret, and must be on their OWN\n"
+        "; line -- never appended after a command on the same line (see the\n"
+        "; docstring above for why that silently corrupts the command's value).\n"
         "; =====================================================================\n"
         "\n"
         "; ---- 1) Media config (mark sensing, TT, size) + SAVE --------------\n"
         "^XA\n"
-        "^MNM,0         ; For media tracking, MN M, meansing non-cnosinous media mark sensing\n"
-        "^MTT           ; Thermal Transfer Media, with T being thermal transfer\n"
-        "^PMN           ; Decommissioning Mode, lowkey unsure what this means\n"
-        "^LL362         ; Label Length, LLy, x but there isn't anything there so lowkey confused\n"
-        "^PW400         ; Print Width PWa with a = label width in docs\n"
-        "^LH0,0         ; Label Home, LHx, y 0-32000 have to check the\n"
-        "^LS-42         ; Label Shift,\n"
-        "^LT-4          ; Label Top makes this all fit in properly\n"
-        "^JUS           ; Configuration Update, with JUa = active config, JUS = save current settings, This is where the Nozzle Label stuff could lowkey get bad and interfear with the nozzle labels.\n"
-        "^XZ            ; Close Function\n"
+        "^MNM,0\n"
+        "; For media tracking, MN M, meaning non-continuous media mark sensing\n"
+        "^MTT\n"
+        "; Thermal Transfer Media, with T being thermal transfer\n"
+        "^PMN\n"
+        "; Decommissioning Mode, lowkey unsure what this means\n"
+        "^LL362\n"
+        "; Label Length, LLy, x but there isn't anything there so lowkey confused\n"
+        "^PW400\n"
+        "; Print Width PWa with a = label width in dots\n"
+        "^LH0,0\n"
+        "; Label Home, LHx, y 0-32000 have to check the\n"
+        "^LS-42\n"
+        "; Label Shift,\n"
+        "^LT-4\n"
+        "; Label Top makes this all fit in properly\n"
+        "^JUS\n"
+        "; Configuration Update, with JUa = active config, JUS = save current settings, This is where the Nozzle Label stuff could lowkey get bad and interfear with the nozzle labels.\n"
+        "^XZ\n"
+        "; Close Function\n"
         "\n"
         "; ---- 2) The label ------------------------------------------------\n"
         "^XA\n"
-        "^PW400         ; States print width\n"
-        "^LL362         ; Label Length\n"
+        "^PW400\n"
+        "; States print width\n"
+        "^LL362\n"
+        "; Label Length\n"
         "; ========== POSITION: driven by the LAYOUT KNOBS in ZPL_Script.py ===\n"
         "; ^LH is left at 0,0 and the ring + Data Matrix are placed with absolute\n"
         "; ^FO values computed from DESIGN_CENTER_X / DESIGN_CENTER_Y so the two\n"
@@ -520,7 +562,8 @@ def build_zpl_JOA(part, n_number, copies=1):
         "; If the TOP of the ring prints cut off, lower DESIGN_CENTER_Y or re-run\n"
         "; media calibration (see notes at bottom).\n"
         "; ==================================================================\n"
-        "^LH0,0         ; LABEL HOME kept at origin; positioning is done per-field below\n"
+        "^LH0,0\n"
+        "; LABEL HOME kept at origin -- positioning is done per-field below\n"
         ";\n"
         f"; --- curved text ring {text} (graphic, regenerated per part/number) ---\n"
         f"; --- placed at FO {gx},{gy} so its center sits on ({DESIGN_CENTER_X},{DESIGN_CENTER_Y}) ---\n"
@@ -531,23 +574,18 @@ def build_zpl_JOA(part, n_number, copies=1):
         "; c = graphic field count, total number of bytes compression the graphic format, its the size of the image, not the size of the data stream.\n"
         "; d = bytes per row, 1-99999, the number of bytes in a downloaded data that comprise one row of the image\n"
         "; data = data, two digits per byte, LF can be inserted as needed for readability.\n"
-        f"^FO{gx},{gy}{gfa_field}^FS\n"# This is for the printed words
+        f"^FO{gx},{gy}{gfa_field}^FS\n"
         ";\n"
-        f"; --- native Data Matrix, data = {slot}, centered on ({DESIGN_CENTER_X},{DESIGN_CENTER_Y}) ---\n"
-        f"^FO{dmx},{dmy}^BXN,{DM_MODULE},200,{DM_SYMBOL_MODULES},{DM_SYMBOL_MODULES},,,1^FD{slot}^FS\n" # This is for the data matrix
-        "; FO field location, so it chooses that to move where the data matrix will be\n"
-        "; then calls BXN which BX creates 2d matrix symbology, so\n"
-        "; BXo, h, s, c, r, f, g, a is all that has been used\n"
-        "; BXN = normal data matrix, h = dimensional height of individual element, s = quality level, which ECC 200 is recommended.\n"
-        "; c, r = columns, rows -- forces the DM_SYMBOL_MODULES x DM_SYMBOL_MODULES\n"
-        "; grid instead of letting the printer auto-pick (it was choosing 12x12).\n"
-        "; f, g left blank/default (data format, escape char); trailing 1 = the\n"
-        "; 'a' aspect-ratio param FORCED to square (2 = rectangle) -- without this\n"
-        "; explicit flag some renderers/firmware default to whichever ECC200 shape\n"
-        "; (incl. rectangular 8x18/12x26/etc) best fits the data, not necessarily\n"
-        "; the square one, which is what was showing as non-square.\n"
-        "; FD defines a data string for a field, which that field is the data matrix at the slot id above\n"
-        "; ^FS end of the field definition which is a SCII control code also.\n"
+        f"; --- Data Matrix, data = {slot}, centered on ({DESIGN_CENTER_X},{DESIGN_CENTER_Y}) ---\n"
+        "; Rendered as a ^GFA bitmap (same field type/params as the ring above,\n"
+        "; via treepoem's ECC200 Data Matrix generator forced to a 10x10 grid) --\n"
+        "; NOT the native ^BXN barcode. This guarantees a pixel-exact square on\n"
+        "; paper: it removes any dependency on the printer's own barcode-symbology\n"
+        "; renderer, whose aspect-ratio/columns/rows handling isn't guaranteed to\n"
+        "; behave consistently across firmware/printer models (this label was\n"
+        "; observed printing ^BXN as a rectangle despite its explicit square-\n"
+        "; aspect and equal columns/rows params).\n"
+        f"^FO{dmx},{dmy}{dm_gfa_field}^FS\n"
         "^XZ\n"
     )
 
@@ -582,9 +620,9 @@ def generate_label(part, n_number=None, copies=1, include_preview_png=True):
     }
 
     if include_preview_png:
-        # render_label_image composites text + a rendered Data Matrix for an
-        # on-screen preview only -- the actual ZPL above draws the Data
-        # Matrix natively via ^BXN, not from this bitmap.
+        # render_label_image composites the ring + the exact same Data Matrix
+        # bitmap that build_zpl_JOA (above) bakes into the ^GFA field -- this
+        # preview is pixel-accurate, not an approximation.
         preview = render_label_image(part, n_number).point(lambda p: 0 if p >= INK_THRESHOLD else 255)
         buf = io.BytesIO()
         preview.save(buf, format="PNG")
