@@ -1,0 +1,15 @@
+[project]
+name = "pico-labels"
+version = "0.1.0"
+description = "Circular pick-and-place nozzle label generator (SVG + ZPL) with Data Matrix barcodes"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "treepoem",
+    "Pillow",
+    "pylibdmtx",
+    "setuptools",  # pylibdmtx still imports distutils, removed in Python 3.12
+]
+
+[tool.uv]
+package = false

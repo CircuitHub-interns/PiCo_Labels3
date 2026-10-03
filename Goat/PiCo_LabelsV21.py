@@ -1006,7 +1006,12 @@ class Label_Gen:
     def _open_path(self, path):
         path = project_path(path)
         try:
-            os.startfile(path)
+            if hasattr(os, "startfile"):
+                os.startfile(path)
+            else:
+                import subprocess
+                opener = "open" if sys.platform == "darwin" else "xdg-open"
+                subprocess.Popen([opener, str(path)])
             return True
         except OSError as exc:
             print(f"Could not open {path}: {exc}")
