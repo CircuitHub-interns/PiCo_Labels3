@@ -2,7 +2,7 @@
   "schema_version": 2,
   "event_type": "pico_labels.gantry_manifest",
   "gantry": "PENDING",
-  "updated_at_utc": "2026-10-03T13:22:18.570813+00:00",
+  "updated_at_utc": "2026-10-03T15:53:22.398865+00:00",
   "runs": [
     {
       "schema_version": 2,
@@ -2320,6 +2320,240 @@
         "verification_report": "/home/joa/Projects/CircuitHub/Labels/Tool Labels/PiCo_Labels3/Goat/verification_report.json",
         "manifest_file": "/home/joa/Projects/CircuitHub/Labels/Tool Labels/PiCo_Labels3/Goat/SWAP Outputs/PENDING/PENDING_manifest.json"
       }
+    },
+    {
+      "schema_version": 2,
+      "event_type": "pico_labels.generated",
+      "created_at_utc": "2026-10-03T15:53:22.397072+00:00",
+      "mode": "production",
+      "gantry": "PENDING",
+      "tools": [
+        {
+          "tool_number": "N0397",
+          "tool_name": "CH0402",
+          "gantry": "PENDING",
+          "serial_id": 397,
+          "padded_serial": "0397"
+        },
+        {
+          "tool_number": "N0398",
+          "tool_name": "CH0402",
+          "gantry": "PENDING",
+          "serial_id": 398,
+          "padded_serial": "0398"
+        },
+        {
+          "tool_number": "N0399",
+          "tool_name": "CH0402",
+          "gantry": "PENDING",
+          "serial_id": 399,
+          "padded_serial": "0399"
+        },
+        {
+          "tool_number": "N0400",
+          "tool_name": "CH0402",
+          "gantry": "PENDING",
+          "serial_id": 400,
+          "padded_serial": "0400"
+        },
+        {
+          "tool_number": "N0401",
+          "tool_name": "CH0402",
+          "gantry": "PENDING",
+          "serial_id": 401,
+          "padded_serial": "0401"
+        },
+        {
+          "tool_number": "N0402",
+          "tool_name": "CH0402",
+          "gantry": "PENDING",
+          "serial_id": 402,
+          "padded_serial": "0402"
+        },
+        {
+          "tool_number": "N0403",
+          "tool_name": "CH0402",
+          "gantry": "PENDING",
+          "serial_id": 403,
+          "padded_serial": "0403"
+        },
+        {
+          "tool_number": "N0404",
+          "tool_name": "CH0402",
+          "gantry": "PENDING",
+          "serial_id": 404,
+          "padded_serial": "0404"
+        },
+        {
+          "tool_number": "N0405",
+          "tool_name": "CH0402",
+          "gantry": "PENDING",
+          "serial_id": 405,
+          "padded_serial": "0405"
+        },
+        {
+          "tool_number": "N0406",
+          "tool_name": "CH0402",
+          "gantry": "PENDING",
+          "serial_id": 406,
+          "padded_serial": "0406"
+        },
+        {
+          "tool_number": "N0407",
+          "tool_name": "CH0406",
+          "gantry": "PENDING",
+          "serial_id": 407,
+          "padded_serial": "0407"
+        },
+        {
+          "tool_number": "N0408",
+          "tool_name": "CH0406",
+          "gantry": "PENDING",
+          "serial_id": 408,
+          "padded_serial": "0408"
+        },
+        {
+          "tool_number": "N0409",
+          "tool_name": "CH0406",
+          "gantry": "PENDING",
+          "serial_id": 409,
+          "padded_serial": "0409"
+        },
+        {
+          "tool_number": "N0410",
+          "tool_name": "CH0406",
+          "gantry": "PENDING",
+          "serial_id": 410,
+          "padded_serial": "0410"
+        },
+        {
+          "tool_number": "N0411",
+          "tool_name": "CH0406",
+          "gantry": "PENDING",
+          "serial_id": 411,
+          "padded_serial": "0411"
+        },
+        {
+          "tool_number": "N0412",
+          "tool_name": "P057",
+          "gantry": "PENDING",
+          "serial_id": 412,
+          "padded_serial": "0412"
+        },
+        {
+          "tool_number": "N0413",
+          "tool_name": "P057",
+          "gantry": "PENDING",
+          "serial_id": 413,
+          "padded_serial": "0413"
+        },
+        {
+          "tool_number": "N0414",
+          "tool_name": "P057",
+          "gantry": "PENDING",
+          "serial_id": 414,
+          "padded_serial": "0414"
+        },
+        {
+          "tool_number": "N0415",
+          "tool_name": "P057",
+          "gantry": "PENDING",
+          "serial_id": 415,
+          "padded_serial": "0415"
+        },
+        {
+          "tool_number": "N0416",
+          "tool_name": "P057",
+          "gantry": "PENDING",
+          "serial_id": 416,
+          "padded_serial": "0416"
+        },
+        {
+          "tool_number": "N0417",
+          "tool_name": "P057",
+          "gantry": "PENDING",
+          "serial_id": 417,
+          "padded_serial": "0417"
+        },
+        {
+          "tool_number": "N0418",
+          "tool_name": "P057",
+          "gantry": "PENDING",
+          "serial_id": 418,
+          "padded_serial": "0418"
+        },
+        {
+          "tool_number": "N0419",
+          "tool_name": "P057",
+          "gantry": "PENDING",
+          "serial_id": 419,
+          "padded_serial": "0419"
+        },
+        {
+          "tool_number": "N0420",
+          "tool_name": "P057",
+          "gantry": "PENDING",
+          "serial_id": 420,
+          "padded_serial": "0420"
+        },
+        {
+          "tool_number": "N0421",
+          "tool_name": "P055",
+          "gantry": "PENDING",
+          "serial_id": 421,
+          "padded_serial": "0421"
+        },
+        {
+          "tool_number": "N0422",
+          "tool_name": "P055",
+          "gantry": "PENDING",
+          "serial_id": 422,
+          "padded_serial": "0422"
+        },
+        {
+          "tool_number": "N0423",
+          "tool_name": "P055",
+          "gantry": "PENDING",
+          "serial_id": 423,
+          "padded_serial": "0423"
+        },
+        {
+          "tool_number": "N0424",
+          "tool_name": "P055",
+          "gantry": "PENDING",
+          "serial_id": 424,
+          "padded_serial": "0424"
+        },
+        {
+          "tool_number": "N0425",
+          "tool_name": "P055",
+          "gantry": "PENDING",
+          "serial_id": 425,
+          "padded_serial": "0425"
+        },
+        {
+          "tool_number": "N0426",
+          "tool_name": "P055",
+          "gantry": "PENDING",
+          "serial_id": 426,
+          "padded_serial": "0426"
+        },
+        {
+          "tool_number": "N0427",
+          "tool_name": "P055",
+          "gantry": "PENDING",
+          "serial_id": 427,
+          "padded_serial": "0427"
+        }
+      ],
+      "files": {
+        "generated_svgs": [
+          "/home/joa/Projects/CircuitHub/Labels/Tool Labels/PiCo_Labels3/Goat/SWAP Outputs/PENDING/PENDING_V4.svg"
+        ],
+        "template_file": "/home/joa/Projects/CircuitHub/Labels/Tool Labels/PiCo_Labels3/Goat/onlygodknows.svg",
+        "verification_report": "/home/joa/Projects/CircuitHub/Labels/Tool Labels/PiCo_Labels3/Goat/verification_report.json",
+        "manifest_file": "/home/joa/Projects/CircuitHub/Labels/Tool Labels/PiCo_Labels3/Goat/SWAP Outputs/PENDING/PENDING_manifest.json"
+      }
     }
   ],
   "tools": [
@@ -4604,6 +4838,223 @@
       "gantry": "PENDING",
       "serial_id": 396,
       "padded_serial": "0396"
+    },
+    {
+      "tool_number": "N0397",
+      "tool_name": "CH0402",
+      "gantry": "PENDING",
+      "serial_id": 397,
+      "padded_serial": "0397"
+    },
+    {
+      "tool_number": "N0398",
+      "tool_name": "CH0402",
+      "gantry": "PENDING",
+      "serial_id": 398,
+      "padded_serial": "0398"
+    },
+    {
+      "tool_number": "N0399",
+      "tool_name": "CH0402",
+      "gantry": "PENDING",
+      "serial_id": 399,
+      "padded_serial": "0399"
+    },
+    {
+      "tool_number": "N0400",
+      "tool_name": "CH0402",
+      "gantry": "PENDING",
+      "serial_id": 400,
+      "padded_serial": "0400"
+    },
+    {
+      "tool_number": "N0401",
+      "tool_name": "CH0402",
+      "gantry": "PENDING",
+      "serial_id": 401,
+      "padded_serial": "0401"
+    },
+    {
+      "tool_number": "N0402",
+      "tool_name": "CH0402",
+      "gantry": "PENDING",
+      "serial_id": 402,
+      "padded_serial": "0402"
+    },
+    {
+      "tool_number": "N0403",
+      "tool_name": "CH0402",
+      "gantry": "PENDING",
+      "serial_id": 403,
+      "padded_serial": "0403"
+    },
+    {
+      "tool_number": "N0404",
+      "tool_name": "CH0402",
+      "gantry": "PENDING",
+      "serial_id": 404,
+      "padded_serial": "0404"
+    },
+    {
+      "tool_number": "N0405",
+      "tool_name": "CH0402",
+      "gantry": "PENDING",
+      "serial_id": 405,
+      "padded_serial": "0405"
+    },
+    {
+      "tool_number": "N0406",
+      "tool_name": "CH0402",
+      "gantry": "PENDING",
+      "serial_id": 406,
+      "padded_serial": "0406"
+    },
+    {
+      "tool_number": "N0407",
+      "tool_name": "CH0406",
+      "gantry": "PENDING",
+      "serial_id": 407,
+      "padded_serial": "0407"
+    },
+    {
+      "tool_number": "N0408",
+      "tool_name": "CH0406",
+      "gantry": "PENDING",
+      "serial_id": 408,
+      "padded_serial": "0408"
+    },
+    {
+      "tool_number": "N0409",
+      "tool_name": "CH0406",
+      "gantry": "PENDING",
+      "serial_id": 409,
+      "padded_serial": "0409"
+    },
+    {
+      "tool_number": "N0410",
+      "tool_name": "CH0406",
+      "gantry": "PENDING",
+      "serial_id": 410,
+      "padded_serial": "0410"
+    },
+    {
+      "tool_number": "N0411",
+      "tool_name": "CH0406",
+      "gantry": "PENDING",
+      "serial_id": 411,
+      "padded_serial": "0411"
+    },
+    {
+      "tool_number": "N0412",
+      "tool_name": "P057",
+      "gantry": "PENDING",
+      "serial_id": 412,
+      "padded_serial": "0412"
+    },
+    {
+      "tool_number": "N0413",
+      "tool_name": "P057",
+      "gantry": "PENDING",
+      "serial_id": 413,
+      "padded_serial": "0413"
+    },
+    {
+      "tool_number": "N0414",
+      "tool_name": "P057",
+      "gantry": "PENDING",
+      "serial_id": 414,
+      "padded_serial": "0414"
+    },
+    {
+      "tool_number": "N0415",
+      "tool_name": "P057",
+      "gantry": "PENDING",
+      "serial_id": 415,
+      "padded_serial": "0415"
+    },
+    {
+      "tool_number": "N0416",
+      "tool_name": "P057",
+      "gantry": "PENDING",
+      "serial_id": 416,
+      "padded_serial": "0416"
+    },
+    {
+      "tool_number": "N0417",
+      "tool_name": "P057",
+      "gantry": "PENDING",
+      "serial_id": 417,
+      "padded_serial": "0417"
+    },
+    {
+      "tool_number": "N0418",
+      "tool_name": "P057",
+      "gantry": "PENDING",
+      "serial_id": 418,
+      "padded_serial": "0418"
+    },
+    {
+      "tool_number": "N0419",
+      "tool_name": "P057",
+      "gantry": "PENDING",
+      "serial_id": 419,
+      "padded_serial": "0419"
+    },
+    {
+      "tool_number": "N0420",
+      "tool_name": "P057",
+      "gantry": "PENDING",
+      "serial_id": 420,
+      "padded_serial": "0420"
+    },
+    {
+      "tool_number": "N0421",
+      "tool_name": "P055",
+      "gantry": "PENDING",
+      "serial_id": 421,
+      "padded_serial": "0421"
+    },
+    {
+      "tool_number": "N0422",
+      "tool_name": "P055",
+      "gantry": "PENDING",
+      "serial_id": 422,
+      "padded_serial": "0422"
+    },
+    {
+      "tool_number": "N0423",
+      "tool_name": "P055",
+      "gantry": "PENDING",
+      "serial_id": 423,
+      "padded_serial": "0423"
+    },
+    {
+      "tool_number": "N0424",
+      "tool_name": "P055",
+      "gantry": "PENDING",
+      "serial_id": 424,
+      "padded_serial": "0424"
+    },
+    {
+      "tool_number": "N0425",
+      "tool_name": "P055",
+      "gantry": "PENDING",
+      "serial_id": 425,
+      "padded_serial": "0425"
+    },
+    {
+      "tool_number": "N0426",
+      "tool_name": "P055",
+      "gantry": "PENDING",
+      "serial_id": 426,
+      "padded_serial": "0426"
+    },
+    {
+      "tool_number": "N0427",
+      "tool_name": "P055",
+      "gantry": "PENDING",
+      "serial_id": 427,
+      "padded_serial": "0427"
     }
   ]
 }

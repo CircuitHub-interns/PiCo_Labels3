@@ -1177,7 +1177,7 @@ class Label_Gen:
         swap_outputs = project_path("SWAP Outputs")
         if swap_outputs.exists():
             for gantry_dir in swap_outputs.iterdir():
-                if not gantry_dir.is_dir() or gantry_dir.name in {"G1", "G2", "G3", "G4", "G5"}:
+                if gantry_dir.is_dir():
                     gantry_manifest_path = gantry_dir / f"{gantry_dir.name}_manifest.json"
                     if gantry_manifest_path.exists():
                         with open(gantry_manifest_path, "r", encoding="utf-8") as f:
@@ -1199,23 +1199,28 @@ class Label_Gen:
         print("1) Generate new labels")
         print("2) Manage tools (unassign, move, delete)")
         print("3) Remove Nozzle IDs (legacy)")
+        print("4) Reprint existing labels")
         
         while True:
-            choice = self._prompt_input("Choose 1, 2, or 3 [1]:").strip()
+            choice = self._prompt_input("Choose 1, 2, 3, or 4 [1]:").strip()
             if choice in {"", "1"}:
                 return "generate"
             if choice == "2":
                 return "manage"
             if choice == "3":
                 return "remove"
-            print("Please enter 1, 2, or 3.")
+            if choice == "4":
+                return "reprint"
+            print("Please enter 1, 2, 3, or 4.")
+
+    TOOL_LOCATIONS = ["PENDING", "G1", "G2", "G3", "G4", "G5"]
 
     def _pending_manifest_path(self):
-        """Path to pending tools manifest (not assigned to any gantry)."""
+        """Legacy pending file used by older versions; read so those tools still show up."""
         return project_path("SWAP Outputs") / "pending_tools_manifest.json"
 
     def _load_pending_manifest(self):
-        """Load pending tools manifest."""
+        """Load the legacy pending tools manifest."""
         path = self._pending_manifest_path()
         if not path.exists():
             return {
@@ -1229,122 +1234,124 @@ class Label_Gen:
             return json.load(f)
 
     def _save_pending_manifest(self, manifest):
-        """Save pending tools manifest."""
+        """Save the legacy pending tools manifest."""
         path = self._pending_manifest_path()
         path.parent.mkdir(parents=True, exist_ok=True)
         manifest["updated_at_utc"] = datetime.now(timezone.utc).isoformat()
         with open(path, "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=2)
 
+    def _global_manifest_path(self):
+        return project_path("SWAP Outputs") / "global_manifest.json"
+
+    def _location_manifest_path(self, location):
+        return project_path("SWAP Outputs") / location / f"{location}_manifest.json"
+
+    @staticmethod
+    def _parse_tool_numbers(raw):
+        """'N0182-N0190, N0250 251' -> ['N0182', ..., 'N0190', 'N0250', 'N0251']."""
+        raw = re.sub(r"\s*-\s*", "-", raw.strip().upper())
+        numbers = []
+        for token in re.split(r"[,\s]+", raw):
+            if not token:
+                continue
+            match = re.fullmatch(r"N?(\d+)(?:-N?(\d+))?", token)
+            if not match:
+                raise ValueError(f"'{token}' is not a tool number or range (e.g., N0021 or N0021-N0030).")
+            start = int(match.group(1))
+            end = int(match.group(2) or start)
+            if end < start:
+                start, end = end, start
+            numbers.extend(f"N{n:04d}" for n in range(start, end + 1))
+        return list(dict.fromkeys(numbers))
+
+    @staticmethod
+    def _format_tool_ranges(tool_numbers):
+        """['N0001', 'N0002', 'N0003', 'N0007'] -> 'N0001-N0003, N0007'."""
+        values = sorted({int(t[1:]) for t in tool_numbers})
+        ranges = []
+        for n in values:
+            if ranges and n == ranges[-1][1] + 1:
+                ranges[-1][1] = n
+            else:
+                ranges.append([n, n])
+        return ", ".join(
+            f"N{a:04d}" if a == b else f"N{a:04d}-N{b:04d}" for a, b in ranges
+        )
+
+    def _prompt_tool_numbers(self, prompt, tool_number=None):
+        """Use tool_number (CLI) if given, otherwise ask. Accepts single numbers and ranges."""
+        while True:
+            raw = tool_number if tool_number is not None else self._prompt_input(prompt)
+            try:
+                numbers = self._parse_tool_numbers(raw)
+            except ValueError as exc:
+                print(f"✗ {exc}")
+                if tool_number is not None:
+                    return []
+                continue
+            if numbers or tool_number is not None:
+                return numbers
+            print("Please enter at least one tool number.")
+
     def _get_all_tools(self):
-        """Get all tools organized by location (gantry or pending)."""
-        tools_by_location = {
-            "pending": [],
-            "G1": [], "G2": [], "G3": [], "G4": [], "G5": []
-        }
+        """Get all tools organized by location (PENDING or a gantry)."""
+        tools_by_location = {location: [] for location in self.TOOL_LOCATIONS}
         
-        # Pending tools
-        pending_manifest = self._load_pending_manifest()
-        for tool in pending_manifest.get("tools", []):
-            tools_by_location["pending"].append(tool)
-        
-        # Gantry tools
-        global_manifest_path = project_path("SWAP Outputs") / "global_manifest.json"
+        global_manifest_path = self._global_manifest_path()
         if global_manifest_path.exists():
             with open(global_manifest_path, "r", encoding="utf-8") as f:
                 global_manifest = json.load(f)
             
-            for gantry, tools in global_manifest.get("gantries", {}).items():
-                if gantry in tools_by_location:
-                    tools_by_location[gantry] = tools
+            for location, tools in global_manifest.get("gantries", {}).items():
+                if location in tools_by_location:
+                    tools_by_location[location] = list(tools)
+        
+        # Tools unassigned by older versions were kept in pending_tools_manifest.json
+        seen = {t.get("tool_number") for t in tools_by_location["PENDING"]}
+        for tool in self._load_pending_manifest().get("tools", []):
+            if tool.get("tool_number") not in seen:
+                tools_by_location["PENDING"].append(tool)
         
         return tools_by_location
 
     def _find_tool_location(self, tool_number):
-        """Find which gantry or pending a tool is assigned to. Returns (location_type, location_name)."""
-        tools_by_location = self._get_all_tools()
-        
-        for location, tools in tools_by_location.items():
+        """Find where a tool lives. Returns (location, tool) or (None, None)."""
+        for location, tools in self._get_all_tools().items():
             for tool in tools:
                 if tool.get("tool_number") == tool_number:
-                    return (location, tools)
+                    return (location, tool)
         
         return (None, None)
 
-    def _list_all_tools(self):
-        """Display all tools organized by location."""
-        print("\n=== Tool Inventory ===\n")
-        tools_by_location = self._get_all_tools()
+    def _resolve_tools(self, tool_numbers):
+        """Look up tool numbers. Returns [(location, tool), ...] and reports any not found."""
+        index = {}
+        for location, tools in self._get_all_tools().items():
+            for tool in tools:
+                index.setdefault(tool.get("tool_number"), (location, tool))
         
-        total = 0
-        for location in ["pending", "G1", "G2", "G3", "G4", "G5"]:
-            tools = tools_by_location[location]
-            status = "PENDING (not in production)" if location == "pending" else f"GANTRY {location}"
-            print(f"{status}: {len(tools)} tool(s)")
-            
-            for tool in sorted(tools, key=lambda t: t.get("tool_number", "")):
-                tool_num = tool.get("tool_number", "?")
-                tool_name = tool.get("tool_name", "?")
-                serial = tool.get("serial_id", "?")
-                print(f"  {tool_num} -> {tool_name} (serial: {serial})")
-                total += 1
-        
-        print(f"\nTotal: {total} tool(s)\n")
+        found = [index[n] for n in tool_numbers if n in index]
+        missing = [n for n in tool_numbers if n not in index]
+        if missing:
+            print(f"✗ Not found in any gantry or PENDING: {self._format_tool_ranges(missing)}")
+        return found
 
-    def _unassign_tool_from_gantry(self, tool_number=None, gantry=None):
-        """Unassign a tool from its gantry and move it to pending."""
-        if tool_number is None:
-            tool_number = self._prompt_input("Enter tool number to unassign (e.g., N0021):").strip().upper()
-        
-        location, tools_list = self._find_tool_location(tool_number)
-        
-        if location is None:
-            print(f"✗ Tool {tool_number} not found in any gantry or pending.")
-            return False
-        
-        if location == "pending":
-            print(f"✗ Tool {tool_number} is already in pending (not assigned to any gantry).")
-            return False
-        
-        if gantry and location != gantry:
-            print(f"✗ Tool {tool_number} is in {location}, not {gantry}.")
-            return False
-        
-        # Find the tool
-        tool_to_move = None
-        for tool in tools_list:
-            if tool.get("tool_number") == tool_number:
-                tool_to_move = tool
-                break
-        
-        if tool_to_move is None:
-            print(f"✗ Could not find tool {tool_number}.")
-            return False
-        
-        confirm = self._ask_yes_no(
-            f"Unassign {tool_number} ({tool_to_move.get('tool_name')}) from {location}",
-            default="N"
-        )
-        
-        if not confirm:
-            print("Unassign cancelled.")
-            return False
-        
-        # Remove from gantry
-        gantry_manifest_path = project_path("SWAP Outputs") / location / f"{location}_manifest.json"
-        if gantry_manifest_path.exists():
-            with open(gantry_manifest_path, "r", encoding="utf-8") as f:
-                gantry_manifest = json.load(f)
+    def _remove_tool_from_location(self, tool_number, location):
+        """Remove a tool from a location's manifest and the global manifest."""
+        location_manifest_path = self._location_manifest_path(location)
+        if location_manifest_path.exists():
+            with open(location_manifest_path, "r", encoding="utf-8") as f:
+                location_manifest = json.load(f)
             
-            tools = gantry_manifest.get("tools", [])
-            filtered_tools = [t for t in tools if t.get("tool_number") != tool_number]
-            gantry_manifest["tools"] = filtered_tools
+            tools = location_manifest.get("tools", [])
+            location_manifest["tools"] = [t for t in tools if t.get("tool_number") != tool_number]
+            location_manifest["updated_at_utc"] = datetime.now(timezone.utc).isoformat()
             
-            with open(gantry_manifest_path, "w", encoding="utf-8") as f:
-                json.dump(gantry_manifest, f, indent=2)
+            with open(location_manifest_path, "w", encoding="utf-8") as f:
+                json.dump(location_manifest, f, indent=2)
         
-        # Remove from global manifest
-        global_manifest_path = project_path("SWAP Outputs") / "global_manifest.json"
+        global_manifest_path = self._global_manifest_path()
         if global_manifest_path.exists():
             with open(global_manifest_path, "r", encoding="utf-8") as f:
                 global_manifest = json.load(f)
@@ -1352,94 +1359,46 @@ class Label_Gen:
             gantries = global_manifest.get("gantries", {})
             if location in gantries:
                 gantries[location] = [t for t in gantries[location] if t.get("tool_number") != tool_number]
+            global_manifest["updated_at_utc"] = datetime.now(timezone.utc).isoformat()
             
             with open(global_manifest_path, "w", encoding="utf-8") as f:
                 json.dump(global_manifest, f, indent=2)
         
-        # Add to pending
-        pending_manifest = self._load_pending_manifest()
-        pending_manifest["tools"].append(tool_to_move)
-        self._save_pending_manifest(pending_manifest)
-        
-        print(f"✓ Unassigned {tool_number} from {location}")
-        print(f"✓ Tool moved to pending")
-        return True
+        if location == "PENDING" and self._pending_manifest_path().exists():
+            pending_manifest = self._load_pending_manifest()
+            pending_manifest["tools"] = [t for t in pending_manifest.get("tools", []) if t.get("tool_number") != tool_number]
+            self._save_pending_manifest(pending_manifest)
 
-    def _move_tool_to_gantry(self, tool_number=None, target_gantry=None):
-        """Move a tool from pending to a specific gantry."""
-        if tool_number is None:
-            tool_number = self._prompt_input("Enter tool number to move (e.g., N0021):").strip().upper()
+    def _add_tool_to_location(self, tool, location):
+        """Add a tool to a location's manifest and the global manifest."""
+        tool = dict(tool, gantry=location)
+        tool_number = tool.get("tool_number")
         
-        location, _ = self._find_tool_location(tool_number)
+        location_manifest_path = self._location_manifest_path(location)
+        location_manifest_path.parent.mkdir(parents=True, exist_ok=True)
         
-        if location is None:
-            print(f"✗ Tool {tool_number} not found.")
-            return False
-        
-        if location != "pending":
-            print(f"✗ Tool {tool_number} is already in {location} (not pending).")
-            return False
-        
-        # Get the tool
-        pending_manifest = self._load_pending_manifest()
-        tool_to_move = None
-        for tool in pending_manifest.get("tools", []):
-            if tool.get("tool_number") == tool_number:
-                tool_to_move = tool
-                break
-        
-        if tool_to_move is None:
-            print(f"✗ Could not find tool {tool_number} in pending.")
-            return False
-        
-        # Ask for target gantry
-        if target_gantry is None:
-            valid_gantries = {"G1", "G2", "G3", "G4", "G5"}
-            while True:
-                target_gantry = self._prompt_input("Target gantry (G1, G2, G3, G4, G5):").strip().upper()
-                if target_gantry in valid_gantries:
-                    break
-                print(f"Please enter one of: {', '.join(sorted(valid_gantries))}")
-        
-        confirm = self._ask_yes_no(
-            f"Move {tool_number} ({tool_to_move.get('tool_name')}) to {target_gantry}",
-            default="Y"
-        )
-        
-        if not confirm:
-            print("Move cancelled.")
-            return False
-        
-        # Update tool gantry
-        tool_to_move["gantry"] = target_gantry
-        
-        # Add to gantry
-        gantry_manifest_path = project_path("SWAP Outputs") / target_gantry / f"{target_gantry}_manifest.json"
-        gantry_manifest_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        if gantry_manifest_path.exists():
-            with open(gantry_manifest_path, "r", encoding="utf-8") as f:
-                gantry_manifest = json.load(f)
+        if location_manifest_path.exists():
+            with open(location_manifest_path, "r", encoding="utf-8") as f:
+                location_manifest = json.load(f)
         else:
-            gantry_manifest = {
+            location_manifest = {
                 "schema_version": MANIFEST_SCHEMA_VERSION,
                 "event_type": "pico_labels.gantry_manifest",
-                "gantry": target_gantry,
+                "gantry": location,
                 "runs": [],
                 "tools": [],
-                "updated_at_utc": datetime.now(timezone.utc).isoformat(),
             }
         
-        tools = gantry_manifest.get("tools", [])
+        tools = location_manifest.get("tools", [])
         if not any(t.get("tool_number") == tool_number for t in tools):
-            tools.append(tool_to_move)
-            gantry_manifest["tools"] = tools
+            tools.append(tool)
+        location_manifest["tools"] = tools
+        location_manifest["updated_at_utc"] = datetime.now(timezone.utc).isoformat()
         
-        with open(gantry_manifest_path, "w", encoding="utf-8") as f:
-            json.dump(gantry_manifest, f, indent=2)
+        with open(location_manifest_path, "w", encoding="utf-8") as f:
+            json.dump(location_manifest, f, indent=2)
         
-        # Add to global manifest
-        global_manifest_path = project_path("SWAP Outputs") / "global_manifest.json"
+        global_manifest_path = self._global_manifest_path()
         if global_manifest_path.exists():
             with open(global_manifest_path, "r", encoding="utf-8") as f:
                 global_manifest = json.load(f)
@@ -1448,40 +1407,133 @@ class Label_Gen:
                 "schema_version": MANIFEST_SCHEMA_VERSION,
                 "event_type": "pico_labels.global_manifest",
                 "gantries": {},
-                "updated_at_utc": datetime.now(timezone.utc).isoformat(),
             }
         
-        gantries = global_manifest.get("gantries", {})
-        if target_gantry not in gantries:
-            gantries[target_gantry] = []
+        gantries = global_manifest.setdefault("gantries", {})
+        gantries.setdefault(location, [])
+        if not any(t.get("tool_number") == tool_number for t in gantries[location]):
+            gantries[location].append(tool)
+        global_manifest["updated_at_utc"] = datetime.now(timezone.utc).isoformat()
         
-        if not any(t.get("tool_number") == tool_number for t in gantries[target_gantry]):
-            gantries[target_gantry].append(tool_to_move)
-        
-        global_manifest["gantries"] = gantries
         with open(global_manifest_path, "w", encoding="utf-8") as f:
             json.dump(global_manifest, f, indent=2)
+
+    def _list_all_tools(self):
+        """Display all tools organized by location, grouped by tool name."""
+        print("\n=== Tool Inventory ===\n")
+        tools_by_location = self._get_all_tools()
         
-        # Remove from pending
-        pending_manifest["tools"] = [t for t in pending_manifest.get("tools", []) if t.get("tool_number") != tool_number]
-        self._save_pending_manifest(pending_manifest)
+        total = 0
+        for location in self.TOOL_LOCATIONS:
+            tools = tools_by_location[location]
+            status = "PENDING (not in production)" if location == "PENDING" else f"GANTRY {location}"
+            print(f"{status}: {len(tools)} tool(s)")
+            
+            by_name = {}
+            for tool in tools:
+                by_name.setdefault(tool.get("tool_name", "?"), []).append(tool.get("tool_number", "N0000"))
+            for tool_name in sorted(by_name):
+                numbers = by_name[tool_name]
+                print(f"  {tool_name} ({len(numbers)}): {self._format_tool_ranges(numbers)}")
+            total += len(tools)
         
-        print(f"✓ Moved {tool_number} from pending to {target_gantry}")
+        print(f"\nTotal: {total} tool(s)\n")
+
+    def _unassign_tool_from_gantry(self, tool_number=None, gantry=None):
+        """Unassign tool(s) from their gantry and move them to PENDING."""
+        tool_numbers = self._prompt_tool_numbers(
+            "Enter tool number(s) to unassign (e.g., N0021 or N0021-N0030):", tool_number
+        )
+        
+        to_move = []
+        for location, tool in self._resolve_tools(tool_numbers):
+            if location == "PENDING":
+                print(f"✗ {tool['tool_number']} is already in PENDING.")
+            elif gantry and location != gantry:
+                print(f"✗ {tool['tool_number']} is in {location}, not {gantry}.")
+            else:
+                to_move.append((location, tool))
+        
+        if not to_move:
+            return False
+        
+        numbers = [tool["tool_number"] for _, tool in to_move]
+        confirm = self._ask_yes_no(
+            f"Unassign {len(to_move)} tool(s) ({self._format_tool_ranges(numbers)}) and move to PENDING",
+            default="N"
+        )
+        
+        if not confirm:
+            print("Unassign cancelled.")
+            return False
+        
+        for location, tool in to_move:
+            self._remove_tool_from_location(tool["tool_number"], location)
+            self._add_tool_to_location(tool, "PENDING")
+        
+        print(f"✓ Moved {len(to_move)} tool(s) to PENDING")
+        return True
+
+    def _move_tool_to_gantry(self, tool_number=None, target_gantry=None):
+        """Move tool(s) from PENDING (or another gantry) to a gantry."""
+        tool_numbers = self._prompt_tool_numbers(
+            "Enter tool number(s) to move (e.g., N0021 or N0021-N0030):", tool_number
+        )
+        found = self._resolve_tools(tool_numbers)
+        if not found:
+            return False
+        
+        # Ask for target gantry
+        valid_gantries = {"G1", "G2", "G3", "G4", "G5"}
+        if target_gantry is None:
+            while True:
+                target_gantry = self._prompt_input("Target gantry (G1, G2, G3, G4, G5):").strip().upper()
+                if target_gantry in valid_gantries:
+                    break
+                print(f"Please enter one of: {', '.join(sorted(valid_gantries))}")
+        elif target_gantry not in valid_gantries:
+            print(f"✗ {target_gantry} is not a gantry. Use one of: {', '.join(sorted(valid_gantries))}")
+            return False
+        
+        to_move = []
+        for location, tool in found:
+            if location == target_gantry:
+                print(f"✗ {tool['tool_number']} is already in {target_gantry}.")
+            else:
+                to_move.append((location, tool))
+        
+        if not to_move:
+            return False
+        
+        numbers = [tool["tool_number"] for _, tool in to_move]
+        confirm = self._ask_yes_no(
+            f"Move {len(to_move)} tool(s) ({self._format_tool_ranges(numbers)}) to {target_gantry}",
+            default="Y"
+        )
+        
+        if not confirm:
+            print("Move cancelled.")
+            return False
+        
+        for location, tool in to_move:
+            self._remove_tool_from_location(tool["tool_number"], location)
+            self._add_tool_to_location(tool, target_gantry)
+        
+        print(f"✓ Moved {len(to_move)} tool(s) to {target_gantry}")
         return True
 
     def _delete_tool_entirely(self, tool_number=None):
-        """Delete a tool completely from all manifests."""
-        if tool_number is None:
-            tool_number = self._prompt_input("Enter tool number to delete (e.g., N0021):").strip().upper()
-        
-        location, _ = self._find_tool_location(tool_number)
-        
-        if location is None:
-            print(f"✗ Tool {tool_number} not found.")
+        """Delete tool(s) completely from all manifests."""
+        tool_numbers = self._prompt_tool_numbers(
+            "Enter tool number(s) to delete (e.g., N0021 or N0021-N0030):", tool_number
+        )
+        found = self._resolve_tools(tool_numbers)
+        if not found:
             return False
         
+        numbers = [tool["tool_number"] for _, tool in found]
         confirm = self._ask_yes_no(
-            f"PERMANENTLY DELETE {tool_number} from {location}",
+            f"PERMANENTLY DELETE {len(found)} tool(s) ({self._format_tool_ranges(numbers)})",
             default="N"
         )
         
@@ -1489,46 +1541,68 @@ class Label_Gen:
             print("Delete cancelled.")
             return False
         
-        # Remove from pending
-        if location == "pending":
-            pending_manifest = self._load_pending_manifest()
-            pending_manifest["tools"] = [t for t in pending_manifest.get("tools", []) if t.get("tool_number") != tool_number]
-            self._save_pending_manifest(pending_manifest)
-        else:
-            # Remove from gantry
-            gantry_manifest_path = project_path("SWAP Outputs") / location / f"{location}_manifest.json"
-            if gantry_manifest_path.exists():
-                with open(gantry_manifest_path, "r", encoding="utf-8") as f:
-                    gantry_manifest = json.load(f)
-                
-                tools = gantry_manifest.get("tools", [])
-                gantry_manifest["tools"] = [t for t in tools if t.get("tool_number") != tool_number]
-                
-                with open(gantry_manifest_path, "w", encoding="utf-8") as f:
-                    json.dump(gantry_manifest, f, indent=2)
+        for location, tool in found:
+            self._remove_tool_from_location(tool["tool_number"], location)
         
-        # Remove from global manifest
-        global_manifest_path = project_path("SWAP Outputs") / "global_manifest.json"
-        if global_manifest_path.exists():
-            with open(global_manifest_path, "r", encoding="utf-8") as f:
-                global_manifest = json.load(f)
-            
-            for gantry in global_manifest.get("gantries", {}):
-                global_manifest["gantries"][gantry] = [t for t in global_manifest["gantries"][gantry] if t.get("tool_number") != tool_number]
-            
-            with open(global_manifest_path, "w", encoding="utf-8") as f:
-                json.dump(global_manifest, f, indent=2)
-        
-        print(f"✓ Permanently deleted {tool_number}")
+        print(f"✓ Permanently deleted {len(found)} tool(s)")
         return True
+
+    def _reprint_labels(self):
+        """Reprint labels for existing N-numbers without issuing new ones."""
+        print("\n=== Reprint Labels ===")
+        print("Reprints reuse existing N-numbers; the N-counter and manifests are not changed.")
+        
+        tool_numbers = self._prompt_tool_numbers(
+            "Enter tool number(s) to reprint (e.g., N0021 or N0021-N0030, N0045):"
+        )
+        found = self._resolve_tools(tool_numbers)
+        if not found:
+            return
+        
+        by_name = {}
+        for location, tool in found:
+            by_name.setdefault(tool.get("tool_name", "?"), []).append(tool["tool_number"])
+        for tool_name, numbers in by_name.items():
+            print(f"  {tool_name} ({len(numbers)}): {self._format_tool_ranges(numbers)}")
+        
+        if not self._ask_yes_no(f"Reprint these {len(found)} label(s)", default="Y"):
+            print("Reprint cancelled.")
+            return
+        
+        self.test_mode = False
+        self.color = "white" if VISUAL_TEMPLATE_COMPARISON_MODE else "black"
+        # Reprints go to SWAP Outputs/REPRINTS/REPRINTS_V<n>.svg so gantry sheet versions are untouched
+        self.gantry = "REPRINTS"
+        
+        slots = []
+        for _, tool in sorted(found, key=lambda entry: entry[1]["tool_number"]):
+            slot = {
+                "part": tool.get("tool_name", "?"),
+                "slot_id": tool["tool_number"],
+                "n_number": int(tool["tool_number"][1:]),
+            }
+            if slot["part"] == "REFERENCE":
+                slot["is_reference"] = True
+            slots.append(slot)
+        
+        self.swap_parts = slots
+        self.slot_sequence = list(slots)
+        self.labels_requested = len(slots)
+        
+        self._template_root = self._load_template_root()
+        self.aria_label_number = 0
+        generated_files = self.generate_pages()
+        
+        print(f"\nReprint complete: {', '.join(generated_files)}")
+        self._post_generation_action(generated_files, None)
 
     def _management_menu(self):
         """Interactive menu for tool management."""
         while True:
             print("\n=== Tool Management ===")
             print("1) List all tools")
-            print("2) Unassign tool from gantry (move to pending)")
-            print("3) Move tool from pending to gantry")
+            print("2) Unassign tool(s) from gantry (move to PENDING)")
+            print("3) Move tool(s) to a gantry")
             print("4) Delete tool entirely")
             print("5) Back to main menu")
             
@@ -1556,6 +1630,10 @@ class Label_Gen:
         
         if action == "remove":
             self._remove_nozzle_ids()
+            return
+        
+        if action == "reprint":
+            self._reprint_labels()
             return
         
         # Generate path
@@ -1687,12 +1765,13 @@ if __name__ == "__main__":
         else:
             print("PiCo Label Generator")
             print("\nUsage:")
-            print("  python PiCo_LabelsV21.py                          # Interactive mode")
-            print("  python PiCo_LabelsV21.py --list                   # List all tools")
-            print("  python PiCo_LabelsV21.py --unassign N0021         # Unassign tool")
-            print("  python PiCo_LabelsV21.py --unassign N0021 --from G2  # Unassign from specific gantry")
-            print("  python PiCo_LabelsV21.py --move N0021 --to G2     # Move tool to gantry")
-            print("  python PiCo_LabelsV21.py --delete N0021           # Delete tool entirely")
+            print("  python Nozzle_LabelsV22.py                          # Interactive mode")
+            print("  python Nozzle_LabelsV22.py --list                   # List all tools")
+            print("  python Nozzle_LabelsV22.py --unassign N0021         # Unassign tool")
+            print("  python Nozzle_LabelsV22.py --unassign N0021 --from G2  # Unassign from specific gantry")
+            print("  python Nozzle_LabelsV22.py --move N0021 --to G2     # Move tool to gantry")
+            print("  python Nozzle_LabelsV22.py --delete N0021           # Delete tool entirely")
+            print("  (tool numbers also accept ranges, e.g. N0021-N0030)")
     else:
         # Interactive mode
         generator.run()
