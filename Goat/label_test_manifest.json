@@ -1,23 +1,30 @@
 {
   "schema_version": 2,
   "event_type": "pico_labels.generated",
-  "created_at_utc": "2026-07-07T14:57:38.994558+00:00",
+  "created_at_utc": "2026-10-03T17:24:17.647504+00:00",
   "mode": "test",
   "gantry": null,
   "tools": [
     {
       "tool_number": "N0001",
-      "tool_name": "P055",
+      "tool_name": "CH0204",
       "gantry": null,
       "serial_id": 1,
       "padded_serial": "0001"
+    },
+    {
+      "tool_number": "N0002",
+      "tool_name": "CH0406",
+      "gantry": null,
+      "serial_id": 2,
+      "padded_serial": "0002"
     }
   ],
   "files": {
     "generated_svgs": [
       "label_test.svg"
     ],
-    "template_file": "C:\\Users\\Natha\\Downloads\\Labeling\\PiCo_Labels3\\Goat\\TURKEY.svg",
-    "verification_report": "C:\\Users\\Natha\\Downloads\\Labeling\\PiCo_Labels3\\Goat\\verification_report.json"
+    "template_file": "/home/joa/Projects/CircuitHub/Labels/Tool Labels/PiCo_Labels3/Goat/TURKEY.svg",
+    "verification_report": "/home/joa/Projects/CircuitHub/Labels/Tool Labels/PiCo_Labels3/Goat/verification_report.json"
   }
 }
