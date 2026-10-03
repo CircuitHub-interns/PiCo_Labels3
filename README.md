@@ -42,10 +42,13 @@ Labels are typeset in **Roboto Mono**. Install it on the machine that renders/pr
 
 ```
 git clone https://github.com/CircuitHub-interns/PiCo_Labels3.git
-cd PiCo_Labels3/Goat
-pip install treepoem pylibdmtx Pillow
-python PiCo_LabelsV21.py
+cd PiCo_Labels3
+uv sync                                   # creates .venv with everything from pyproject.toml
+uv run python Goat/PiCo_LabelsV21.py      # SVG sheet generator (interactive)
+uv run python "Goat/ZPL Goat/ZPL_Script.py" CH0204 --png preview.png   # single label as ZPL
 ```
+
+No uv? `pip install treepoem pylibdmtx Pillow setuptools` works too (`setuptools` is needed on Python 3.12+ because pylibdmtx still imports `distutils`).
 
 The script is fully interactive — it walks you through mode, gantry, and part selection (see [Interactive flow](#interactive-flow)).
 
