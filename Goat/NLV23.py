@@ -709,6 +709,23 @@ class Label_Gen:
             print("No labels requested.")
             return False
 
+        # Offer to fill the rest of the last page by repeating the sequence.
+        # Filler labels keep unique, consecutive N-numbers.
+        empty_slots = (-len(collected)) % MAX_LABELS_PER_PAGE
+        if empty_slots and self._ask_yes_no(
+            f"{len(collected)} label(s) leaves {empty_slots} empty slot(s) on the page. Fill the page?",
+            default="N",
+        ):
+            pattern = list(collected)
+            for i in range(empty_slots):
+                source = pattern[i % len(pattern)]
+                slot = {"part": source["part"], "slot_id": f"N{n_counter:04d}", "n_number": n_counter}
+                if source.get("is_reference"):
+                    slot["is_reference"] = True
+                collected.append(slot)
+                n_counter += 1
+            print(f"  -> Filled {empty_slots} slot(s): N{n_counter - empty_slots:04d} - N{n_counter - 1:04d}")
+
         self.swap_parts = collected
         self.slot_sequence = list(collected)
 
@@ -780,7 +797,18 @@ class Label_Gen:
     def _label_geometry():
         columns = GRID_COLUMNS
         rows = GRID_ROWS
-        
+
+        # ---- HOW TO MOVE THE WHOLE GRID (circles + text + barcodes) -----------
+        # x_start/y_start = center of the FIRST label (top-left).
+        # x_end/y_end     = center of the LAST label (bottom-right); together they set spacing.
+        #   Move everything RIGHT -> add to x_start AND to the 120 inside x_end
+        #   Move everything LEFT  -> subtract from both
+        #   Move everything DOWN  -> add to y_start AND to the 95.8 inside y_end
+        #   Move everything UP    -> subtract from both
+        # Spread columns apart / squeeze together -> change only the + 576.8 in x_end
+        # Spread rows apart / squeeze together    -> change only the + 865 in y_end
+        # Unlike the barcode nudge in _generate_page(), these work the normal way round.
+        # -------------------------------------------------------------------
         radius =  13 # OG 12
         x_start = 120 # For any OG recall 10by10
         x_end =   120 + 576.8 # Orignal 607.2 and 609.2 is too far so 608? 608.4 might have pushed it a little too into where the ppr is, because 104.2 is still perfect and readable
@@ -1024,13 +1052,26 @@ class Label_Gen:
                 job["barcode_data"],
                 context=job["verification_context"],
             )
+            # ---- HOW TO NUDGE THE DATA MATRIX INSIDE EACH CIRCLE ----------------
+            # Only the "x" and "y" numbers below need changing (cx/cy = circle center).
+            # The barcode is rotated 180° around a FIXED point (the "transform" line),
+            # so these work BACKWARDS from what you'd expect:
+            #   Move barcode LEFT   -> make the "x" number BIGGER   (e.g. + 9.2 -> + 9.6)
+            #   Move barcode RIGHT  -> make the "x" number SMALLER  (e.g. + 9.2 -> + 8.8)
+            #   Move barcode UP     -> make the "y" subtraction SMALLER (e.g. - 5.8 -> - 5.4)
+            #   Move barcode DOWN   -> make the "y" subtraction BIGGER  (e.g. - 5.8 -> - 6.2)
+            # Leave the "transform" line alone, otherwise the rotation pivot moves too.
+            # Units are SVG units of the template; ~0.2-0.4 is a typical nudge.
+            # To move the WHOLE grid (circles + text + barcodes) use _label_geometry().
+            # After changing, reprint with main menu option 4 to get labels at the new position.
+            # -------------------------------------------------------------------
             barcode_elem = ET.Element(
                 f"{{{SVG_NAMESPACE}}}image",
                 {
-                    "x": str(job["cx"] + 9.8),   # OG + 9.6 
+                    "x": str(job["cx"] + 9.7),   # OG + 9.6 
                     # 180° flip of original cx - 18.8 (center was -15.05 → now +15.05 from label center), 
                     # V17 is + 10.8, previously 10.4
-                    "y": str(job["cy"] - 5.8),     # - 5
+                    "y": str(job["cy"] - 6.2),     # - 5
                     # 180° flip of original cy - 3 (center was +0.75 → now -0.75 from label center)
                     "width": "8.6", # 7.5 BEAST
                     "height": "8.6", # 7.5 BEAST
@@ -1549,23 +1590,57 @@ class Label_Gen:
         print(f"✓ Permanently deleted {len(found)} tool(s)")
         return True
 
+    def _prompt_reprint_selection(self):
+        """Ask for N-numbers, ranges, and/or tool names (e.g. CH0204 = every CH0204 label).
+
+        Returns [(location, tool), ...] sorted by N-number, or [] if nothing matched.
+        """
+        while True:
+            raw = self._prompt_input(
+                "Enter tool number(s), range(s), or tool name(s) to reprint "
+                "(e.g., N0021-N0030, N0045, or CH0204):"
+            )
+            tokens = re.split(r"[,\s]+", re.sub(r"\s*-\s*", "-", raw.strip().upper()))
+            tokens = [t for t in tokens if t]
+            if not tokens:
+                print("Please enter at least one tool number or tool name.")
+                continue
+
+            number_tokens = [t for t in tokens if re.fullmatch(r"N?\d+(?:-N?\d+)?", t)]
+            name_tokens = [t for t in tokens if t not in number_tokens]
+
+            found = self._resolve_tools(self._parse_tool_numbers(" ".join(number_tokens)))
+
+            if name_tokens:
+                for location, tools in self._get_all_tools().items():
+                    for tool in tools:
+                        if tool.get("tool_name", "").upper() in name_tokens:
+                            found.append((location, tool))
+                known_names = {tool.get("tool_name", "").upper() for _, tool in found}
+                for name in name_tokens:
+                    if name not in known_names:
+                        print(f"✗ No labels found for tool name {name}.")
+
+            # Drop duplicates (e.g. a number that was also matched by its tool name)
+            unique = {}
+            for location, tool in found:
+                unique.setdefault(tool["tool_number"], (location, tool))
+            return sorted(unique.values(), key=lambda entry: entry[1]["tool_number"])
+
     def _reprint_labels(self):
         """Reprint labels for existing N-numbers without issuing new ones."""
         print("\n=== Reprint Labels ===")
         print("Reprints reuse existing N-numbers; the N-counter and manifests are not changed.")
         
-        tool_numbers = self._prompt_tool_numbers(
-            "Enter tool number(s) to reprint (e.g., N0021 or N0021-N0030, N0045):"
-        )
-        found = self._resolve_tools(tool_numbers)
+        found = self._prompt_reprint_selection()
         if not found:
             return
-        
+
         by_name = {}
         for location, tool in found:
-            by_name.setdefault(tool.get("tool_name", "?"), []).append(tool["tool_number"])
-        for tool_name, numbers in by_name.items():
-            print(f"  {tool_name} ({len(numbers)}): {self._format_tool_ranges(numbers)}")
+            by_name.setdefault((tool.get("tool_name", "?"), location), []).append(tool["tool_number"])
+        for (tool_name, location), numbers in sorted(by_name.items()):
+            print(f"  {tool_name} in {location} ({len(numbers)}): {self._format_tool_ranges(numbers)}")
         
         if not self._ask_yes_no(f"Reprint these {len(found)} label(s)", default="Y"):
             print("Reprint cancelled.")
