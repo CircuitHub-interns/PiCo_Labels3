@@ -21,8 +21,8 @@ DEFAULT_STARTING_PART           = "CH0204"
 ALLOWED_PARTS_FILE              = "allowed_parts.txt"
 VERIFICATION_REPORT_FILE        = "verification_report.json"
 MANIFEST_SCHEMA_VERSION         = 2
-TEST_TEMPLATE_FILE              = "TURKEY.svg" # V14 now testing turkey to see if they are the same
-PRODUCTION_TEMPLATE_FILE        = "onlygodknows.svg" 
+TEST_TEMPLATE_FILE              = "Test_Template.svg" # V14 now testing turkey to see if they are the same
+PRODUCTION_TEMPLATE_FILE        = "Production_Template.svg" 
 VISUAL_TEMPLATE_COMPARISON_MODE = False # Toggle On and Off for circle position testing
 DEFAULT_ALLOWED_PARTS = [
     "P056",
